@@ -24,17 +24,17 @@ namespace CodeCleaner
         public void CheckFunctionScope(MethodDeclarationSyntax function)
         {
             FileLinePositionSpan linePositionSpan = function.Identifier.GetLocation().GetLineSpan();
+            BlockSyntax body = function.Body;
             FileLinePositionSpan fileLinePositionSpan = function.SyntaxTree.GetMappedLineSpan(body.Span);
             int start = fileLinePositionSpan.StartLinePosition.Line + 1;
             int end = fileLinePositionSpan.EndLinePosition.Line;
             int scope = end - start;
-            
+
             if (scope > 24)
             {
                 Console.WriteLine("function {0} in row {1} and col {2} has more than 24 lines.",
                     function.Identifier.ValueText, linePositionSpan.StartLinePosition.Line + 1, linePositionSpan.StartLinePosition.Character + 1);
             }
-
         }
 
         public void CheckFunctionInputs(MethodDeclarationSyntax function)
