@@ -11,12 +11,19 @@ namespace CodeCleaner
     {
         public struct Position
         {
+            public override bool Equals(object obj)
+            {
+                Position mys = (Position)obj;
+                return ((mys.col == this.col) && (mys.row == this.row));
+            }
             public int row;
             public int col;
         }
 
         Dictionary<Position, string> Identifiers = new Dictionary<Position, string>();
         Dictionary<Position, string> Functions = new Dictionary<Position, string>();
+        Dictionary<Position, string> ForIndexes = new Dictionary<Position, string>();
+
         static string code = System.IO.File.ReadAllText(@"..\..\source_code.txt");
         static SyntaxTree tree = CSharpSyntaxTree.ParseText(code);
         static SyntaxNode root = tree.GetRoot();
@@ -88,7 +95,8 @@ namespace CodeCleaner
                         row = token.GetLocation().GetLineSpan().StartLinePosition.Line,
                         col = token.GetLocation().GetLineSpan().StartLinePosition.Character
                     };
-                    Identifiers.Add(position, token.ToString());
+                    if (!ForIndexes.ContainsKey(position))
+                        Identifiers.Add(position, token.ToString());
                 }
             }
         }
@@ -103,8 +111,10 @@ namespace CodeCleaner
                     row = id_.GetLocation().GetLineSpan().StartLinePosition.Line,
                     col = id_.GetLocation().GetLineSpan().StartLinePosition.Character
                 };
-                Identifiers.Add(position, id_.ToString());
+                if (!ForIndexes.ContainsKey(position))
+                    Identifiers.Add(position, id_.ToString());
             }
+            
             foreach (var item in Identifiers)
             {
                 if (!MySpellChecker.HasCorrectSpell(item.Value))
@@ -112,15 +122,51 @@ namespace CodeCleaner
             }
         }
 
+        public void AddForLoopIndexes(IEnumerable<ForStatementSyntax> forStatements)
+        {
+            foreach (var forLoop in forStatements)
+            {
+                foreach (var variable in forLoop.Declaration.Variables)
+                {
+                    var id_ = variable.Identifier;
+                    string varName = id_.ToString();
+                    Position position = new Position
+                    {
+                        row = id_.GetLocation().GetLineSpan().StartLinePosition.Line,
+                        col = id_.GetLocation().GetLineSpan().StartLinePosition.Character
+                    };
+                    ForIndexes.Add(position, variable.Identifier.ToString());
+                    var body = forLoop.DescendantNodes().OfType<IdentifierNameSyntax>();
+                    foreach (var i in body)
+                    {
+                        if (i.Identifier.ToString() == varName)
+                        {
+                            Position position2 = new Position
+                            {
+                                row = i.Identifier.GetLocation().GetLineSpan().StartLinePosition.Line,
+                                col = i.Identifier.GetLocation().GetLineSpan().StartLinePosition.Character
+                            };
+                            ForIndexes.Add(position2, i.Identifier.ToString());
+                        }
+                    }
+                }
+            }
+        }
+
         public void Run()
-        {   
+        {
+            var forLoops = root.DescendantNodes().OfType<ForStatementSyntax>();
+            AddForLoopIndexes(forLoops);
+
             var functions = root.DescendantNodes().OfType<MethodDeclarationSyntax>();
             CheckFunctions(functions);
+
             var variables = root.DescendantNodes().OfType<VariableDeclarationSyntax>();
             CheckVariables(variables);
+
             var identifiers = root.DescendantNodes().OfType<IdentifierNameSyntax>();
             CheckIdentifiers(identifiers);
-            // var forLoops = root.DescendantNodes().OfType<ForStatementSyntax>();
+
             Console.WriteLine("\nEnd of analysis...");
         }
     }

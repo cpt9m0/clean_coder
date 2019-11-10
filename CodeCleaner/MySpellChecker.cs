@@ -5,7 +5,7 @@ using LAIR.ResourceAPIs.WordNet;
 
 namespace CodeCleaner
 {
-    static class MySpellChecker
+   static class MySpellChecker
     {
         private static WordNetEngine WordNetEngine = new WordNetEngine(Environment.CurrentDirectory + @"\resources\", false);
         private static string wordToCheck;
@@ -23,10 +23,6 @@ namespace CodeCleaner
             counter = 0;
             if (Words != null)
             {
-                /*string regex = @"^\w{1}$";
-                Match match = Regex.Match(word, regex, RegexOptions.IgnoreCase);
-                if (match.Success)
-                    return true;*/
                 foreach (string W in Words)
                 {
                     wordToCheck = W;
@@ -60,13 +56,10 @@ namespace CodeCleaner
         {
             oDict.DictionaryFile = @"..\..\..\packages\NetSpell.2.1.7\dic\en-US.dic";
             oDict.Initialize();
-
             wordToCheck = word;
             string CamelChecker = wordToCheck.SplitCamel();
             string[] Words = CamelChecker.Split(' ');
-
             counter = CheckWords(Words);
-
             if (counter == Words.Length)
             {
                 return true;
